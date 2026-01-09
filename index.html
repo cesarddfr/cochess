@@ -2,129 +2,103 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Juego de Carriles</title>
+<title>Juego Carriles Realista</title>
+
 <style>
-body {
-  margin: 0;
-  overflow: hidden;
-  background: #1a1a1a;
-  font-family: Arial, sans-serif;
+body{
+  margin:0;
+  overflow:hidden;
+  background:#111;
+  font-family:Arial, sans-serif;
 }
 
-#ui {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  color: white;
-  z-index: 10;
+#ui{
+  position:absolute;
+  top:10px;
+  left:10px;
+  color:white;
+  z-index:10;
 }
 
-#road {
-  position: absolute;
-  width: 420px;
-  height: 100vh;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #555;
-  overflow: hidden;
+#road{
+  position:absolute;
+  width:420px;
+  height:100vh;
+  left:50%;
+  transform:translateX(-50%);
+  background:#555;
+  overflow:hidden;
 }
 
 /* Carriles */
-.lane {
-  position: absolute;
-  width: 25%;
-  height: 100%;
-  border-left: 2px dashed #aaa;
+.lane{
+  position:absolute;
+  width:25%;
+  height:100%;
+  border-left:2px dashed #aaa;
 }
 
-.green {
-  background: #0a3b1a;
-  box-shadow: inset 0 0 25px #00ff66;
+.green{
+  background:#0a3a1a;
+  box-shadow:inset 0 0 30px #00ff66;
 }
 
-.ray {
-  position: absolute;
-  width: 100%;
-  height: 60px;
-  background: linear-gradient(transparent, rgba(0,255,100,0.6), transparent);
-  animation: rayMove 0.6s linear infinite;
+.ray{
+  position:absolute;
+  width:100%;
+  height:80px;
+  background:linear-gradient(transparent,rgba(0,255,120,.7),transparent);
+  animation:rayMove .5s linear infinite;
 }
 
-@keyframes rayMove {
-  from { top: -60px; }
-  to { top: 100%; }
+@keyframes rayMove{
+  from{top:-80px}
+  to{top:100%}
 }
 
 /* Coche jugador */
-#car {
-  position: absolute;
-  bottom: 90px;
-  left: 190px;
-  width: 42px;
-  height: 80px;
+#car{
+  position:absolute;
+  width:60px;
+  height:110px;
+  left:180px;
+  bottom:80px;
 }
 
-/* Forma del coche */
-.car-body {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: red;
-  border-radius: 10px 10px 14px 14px;
+/* SVG coche */
+svg{
+  width:100%;
+  height:100%;
 }
-
-.car-window {
-  position: absolute;
-  top: 8px;
-  left: 6px;
-  width: 30px;
-  height: 20px;
-  background: #9ddcff;
-  border-radius: 5px;
-}
-
-.wheel {
-  position: absolute;
-  width: 8px;
-  height: 16px;
-  background: black;
-  border-radius: 4px;
-}
-
-.wheel.left { left: -4px; top: 18px; }
-.wheel.right { right: -4px; top: 18px; }
-.wheel.left.back { top: 46px; }
-.wheel.right.back { top: 46px; }
 
 /* Batería */
-#batteryBox {
-  position: absolute;
-  top: -30px;
-  width: 100%;
-  text-align: center;
-  color: white;
-  font-size: 10px;
+#batteryBox{
+  position:absolute;
+  top:-38px;
+  width:100%;
+  text-align:center;
+  font-size:10px;
+  color:white;
 }
 
-#batteryBar {
-  width: 100%;
-  height: 6px;
-  background: red;
+#batteryBar{
+  width:100%;
+  height:6px;
+  background:red;
 }
 
-#batteryFill {
-  height: 100%;
-  width: 100%;
-  background: lime;
+#batteryFill{
+  height:100%;
+  width:100%;
+  background:lime;
 }
 
 /* Coches de fondo */
-.other-car {
-  position: absolute;
-  width: 36px;
-  height: 70px;
-  background: #333;
-  border-radius: 10px;
+.other-car{
+  position:absolute;
+  width:50px;
+  height:100px;
+  opacity:.9;
 }
 </style>
 </head>
@@ -152,92 +126,105 @@ body {
       </div>
     </div>
 
-    <div class="car-body" id="carBody"></div>
-    <div class="car-window"></div>
-    <div class="wheel left"></div>
-    <div class="wheel right"></div>
-    <div class="wheel left back"></div>
-    <div class="wheel right back"></div>
+    <!-- COCHE SVG REALISTA -->
+    <svg viewBox="0 0 60 110">
+      <path id="carBody" d="M10 5 Q30 -5 50 5 L55 25 L55 90 Q30 105 5 90 L5 25 Z" fill="#d40000"/>
+      <rect x="18" y="18" width="24" height="20" rx="5" fill="#8fd3ff"/>
+      <rect x="8" y="35" width="6" height="20" rx="3" fill="#000"/>
+      <rect x="46" y="35" width="6" height="20" rx="3" fill="#000"/>
+      <rect x="8" y="70" width="6" height="20" rx="3" fill="#000"/>
+      <rect x="46" y="70" width="6" height="20" rx="3" fill="#000"/>
+    </svg>
   </div>
 </div>
 
 <script>
-const car = document.getElementById("car");
-const carBody = document.getElementById("carBody");
-const speedText = document.getElementById("speed");
-const batteryFill = document.getElementById("batteryFill");
+const car=document.getElementById("car");
+const carBody=document.getElementById("carBody");
+const speedText=document.getElementById("speed");
+const batteryFill=document.getElementById("batteryFill");
+const road=document.getElementById("road");
 
-let x = 190;
-let speed = 0;
-let battery = 100;
-let broken = false;
+let x=180;
+let y=window.innerHeight-200;
+let speed=0;
+let battery=100;
+let broken=false;
 
-const cars = [
-  { name: "Porsche", color: "#d60000" },
-  { name: "Lambo", color: "#ffd000" },
-  { name: "Mercedes", color: "#c0c0c0" },
-  { name: "Tesla", color: "#00c8ff" }
+const cars=[
+ {name:"Porsche",color:"#d40000"},
+ {name:"Lambo",color:"#ffd000"},
+ {name:"Mercedes",color:"#cfcfcf"},
+ {name:"Tesla",color:"#00c8ff"}
 ];
-let currentCar = 0;
+let currentCar=0;
 
-function changeCar() {
-  currentCar = (currentCar + 1) % cars.length;
-  carBody.style.background = cars[currentCar].color;
+function changeCar(){
+ currentCar=(currentCar+1)%cars.length;
+ carBody.setAttribute("fill",cars[currentCar].color);
 }
 
-/* Controles */
-const keys = {};
-document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+const keys={};
+document.addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
+document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-/* Coches de fondo */
-const road = document.getElementById("road");
-function spawnOtherCar() {
-  const c = document.createElement("div");
-  c.className = "other-car";
-  c.style.left = (Math.floor(Math.random() * 4) * 105 + 35) + "px";
-  c.style.top = "-80px";
-  road.appendChild(c);
+/* Coches fondo */
+function spawnOtherCar(){
+ const c=document.createElement("div");
+ c.className="other-car";
+ c.innerHTML=car.innerHTML;
+ c.style.left=(Math.floor(Math.random()*4)*105+30)+"px";
+ c.style.top="-120px";
+ road.appendChild(c);
+ let y=-120;
 
-  let y = -80;
-  const move = () => {
-    y += 2;
-    c.style.top = y + "px";
-    if (y < window.innerHeight) requestAnimationFrame(move);
-    else c.remove();
-  };
-  move();
+ function move(){
+   y+=3;
+   c.style.top=y+"px";
+   if(y<window.innerHeight) requestAnimationFrame(move);
+   else c.remove();
+ }
+ move();
 }
-setInterval(spawnOtherCar, 1500);
+setInterval(spawnOtherCar,1300);
 
-/* Juego */
-function loop() {
-  if (!broken) {
-    if (keys.w) speed += 0.25;
-    if (keys.s) speed -= 0.3;
-    if (keys.a) x -= 3;
-    if (keys.d) x += 3;
-  }
+/* Loop */
+function loop(){
+ if(!broken){
+   if(keys.w){
+     speed+=0.3;
+     y-=2;
+   }
+   if(keys.s){
+     speed-=0.4;
+     y+=2;
+   }
+   if(keys.a) x-=3;
+   if(keys.d) x+=3;
+ }
 
-  speed = Math.max(0, Math.min(speed, 140));
-  x = Math.max(0, Math.min(x, 380));
-  car.style.left = x + "px";
+ speed=Math.max(0,Math.min(speed,160));
+ x=Math.max(0,Math.min(x,360));
+ y=Math.max(50,Math.min(y,window.innerHeight-140));
 
-  speedText.textContent = "Velocidad: " + Math.floor(speed) + " km/h";
+ car.style.left=x+"px";
+ car.style.top=y+"px";
 
-  battery -= 0.06;
-  if (x > 210 && x < 315) battery += 0.25;
+ speedText.textContent="Velocidad: "+Math.floor(speed)+" km/h";
 
-  battery = Math.max(0, Math.min(100, battery));
-  batteryFill.style.width = battery + "%";
+ battery-=0.05;
+ if(x>210 && x<320) battery+=0.25;
 
-  if (battery <= 0) {
-    broken = true;
-    speed = 0;
-    speedText.textContent = "AVERÍA";
-  }
+ battery=Math.max(0,Math.min(100,battery));
+ batteryFill.style.width=battery+"%";
 
-  requestAnimationFrame(loop);
+ if(battery<=0){
+   broken=true;
+   speed=0;
+   speedText.textContent="AVERÍA";
+ }
+
+ requestAnimationFrame(loop);
 }
 loop();
 </script>
