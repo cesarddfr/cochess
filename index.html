@@ -2,13 +2,13 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Ciudad Top-Down</title>
+<title>Juego Carriles Realista</title>
 
 <style>
 body{
   margin:0;
-  background:#1b1b1b;
   overflow:hidden;
+  background:#111;
   font-family:Arial, sans-serif;
 }
 
@@ -20,39 +20,61 @@ body{
   z-index:10;
 }
 
-/* MAPA */
-#map{
-  position:relative;
-  width:2000px;
-  height:2000px;
-  background:#2b2b2b;
-}
-
-/* Calles */
-.road{
+#road{
   position:absolute;
+  width:420px;
+  height:100vh;
+  left:50%;
+  transform:translateX(-50%);
   background:#555;
+  overflow:hidden;
 }
 
-.road.green{
-  background:#0c3f23;
-  box-shadow:0 0 20px #00ff88 inset;
+/* Carriles */
+.lane{
+  position:absolute;
+  width:25%;
+  height:100%;
+  border-left:2px dashed #aaa;
+}
+
+.green{
+  background:#0a3a1a;
+  box-shadow:inset 0 0 30px #00ff66;
+}
+
+.ray{
+  position:absolute;
+  width:100%;
+  height:80px;
+  background:linear-gradient(transparent,rgba(0,255,120,.7),transparent);
+  animation:rayMove .5s linear infinite;
+}
+
+@keyframes rayMove{
+  from{top:-80px}
+  to{top:100%}
 }
 
 /* Coche jugador */
-#player{
+#car{
   position:absolute;
-  width:50px;
-  height:90px;
-  transform-origin:50% 50%;
+  width:60px;
+  height:110px;
+  left:180px;
+  bottom:80px;
 }
 
 /* SVG coche */
-svg{width:100%;height:100%;}
+svg{
+  width:100%;
+  height:100%;
+}
 
+/* Batería */
 #batteryBox{
   position:absolute;
-  top:-35px;
+  top:-38px;
   width:100%;
   text-align:center;
   font-size:10px;
@@ -60,6 +82,7 @@ svg{width:100%;height:100%;}
 }
 
 #batteryBar{
+  width:100%;
   height:6px;
   background:red;
 }
@@ -70,12 +93,12 @@ svg{width:100%;height:100%;}
   background:lime;
 }
 
-/* Coches NPC */
-.npc{
+/* Coches de fondo */
+.other-car{
   position:absolute;
-  width:45px;
-  height:80px;
-  opacity:.85;
+  width:50px;
+  height:100px;
+  opacity:.9;
 }
 </style>
 </head>
@@ -83,22 +106,19 @@ svg{width:100%;height:100%;}
 <body>
 
 <div id="ui">
+  <button onclick="changeCar()">Cambiar coche</button>
   <div id="speed">Velocidad: 0 km/h</div>
 </div>
 
-<div id="map">
+<div id="road">
+  <div class="lane" style="left:0%"></div>
+  <div class="lane" style="left:25%"></div>
+  <div class="lane green" style="left:50%">
+    <div class="ray"></div>
+  </div>
+  <div class="lane" style="left:75%"></div>
 
-  <!-- ROADS -->
-  <div class="road" style="left:300px;top:0;width:120px;height:2000px"></div>
-  <div class="road green" style="left:600px;top:0;width:120px;height:2000px"></div>
-  <div class="road" style="left:900px;top:0;width:120px;height:2000px"></div>
-
-  <div class="road" style="top:400px;left:0;width:2000px;height:120px"></div>
-  <div class="road green" style="top:900px;left:0;width:2000px;height:120px"></div>
-  <div class="road" style="top:1400px;left:0;width:2000px;height:120px"></div>
-
-  <!-- PLAYER -->
-  <div id="player" style="left:350px;top:800px">
+  <div id="car">
     <div id="batteryBox">
       BATERÍA
       <div id="batteryBar">
@@ -106,90 +126,105 @@ svg{width:100%;height:100%;}
       </div>
     </div>
 
+    <!-- COCHE SVG REALISTA -->
     <svg viewBox="0 0 60 110">
-      <path id="body" d="M10 5 Q30 -5 50 5 L55 30 L55 90 Q30 105 5 90 L5 30 Z" fill="#d40000"/>
-      <rect x="18" y="22" width="24" height="22" rx="5" fill="#9ddcff"/>
-      <rect x="8" y="35" width="6" height="20" rx="3"/>
-      <rect x="46" y="35" width="6" height="20" rx="3"/>
-      <rect x="8" y="70" width="6" height="20" rx="3"/>
-      <rect x="46" y="70" width="6" height="20" rx="3"/>
+      <path id="carBody" d="M10 5 Q30 -5 50 5 L55 25 L55 90 Q30 105 5 90 L5 25 Z" fill="#d40000"/>
+      <rect x="18" y="18" width="24" height="20" rx="5" fill="#8fd3ff"/>
+      <rect x="8" y="35" width="6" height="20" rx="3" fill="#000"/>
+      <rect x="46" y="35" width="6" height="20" rx="3" fill="#000"/>
+      <rect x="8" y="70" width="6" height="20" rx="3" fill="#000"/>
+      <rect x="46" y="70" width="6" height="20" rx="3" fill="#000"/>
     </svg>
   </div>
-
 </div>
 
 <script>
-const player=document.getElementById("player");
-const batteryFill=document.getElementById("batteryFill");
+const car=document.getElementById("car");
+const carBody=document.getElementById("carBody");
 const speedText=document.getElementById("speed");
-const map=document.getElementById("map");
+const batteryFill=document.getElementById("batteryFill");
+const road=document.getElementById("road");
 
-let px=350, py=800;
-let angle=0;
+let x=180;
+let y=window.innerHeight-200;
 let speed=0;
 let battery=100;
 let broken=false;
 
-/* Controles */
+const cars=[
+ {name:"Porsche",color:"#d40000"},
+ {name:"Lambo",color:"#ffd000"},
+ {name:"Mercedes",color:"#cfcfcf"},
+ {name:"Tesla",color:"#00c8ff"}
+];
+let currentCar=0;
+
+function changeCar(){
+ currentCar=(currentCar+1)%cars.length;
+ carBody.setAttribute("fill",cars[currentCar].color);
+}
+
 const keys={};
 document.addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
 document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-/* NPCs */
-function spawnNPC(){
-  const n=document.createElement("div");
-  n.className="npc";
-  n.innerHTML=player.querySelector("svg").outerHTML;
-  map.appendChild(n);
+/* Coches fondo */
+function spawnOtherCar(){
+ const c=document.createElement("div");
+ c.className="other-car";
+ c.innerHTML=car.innerHTML;
+ c.style.left=(Math.floor(Math.random()*4)*105+30)+"px";
+ c.style.top="-120px";
+ road.appendChild(c);
+ let y=-120;
 
-  let x=600,y=Math.random()*2000,dir=90;
-  function move(){
-    y+=2;
-    n.style.left=x+"px";
-    n.style.top=y+"px";
-    n.style.transform=`rotate(${dir}deg)`;
-    if(y<2000) requestAnimationFrame(move);
-    else n.remove();
-  }
-  move();
+ function move(){
+   y+=3;
+   c.style.top=y+"px";
+   if(y<window.innerHeight) requestAnimationFrame(move);
+   else c.remove();
+ }
+ move();
 }
-setInterval(spawnNPC,1200);
+setInterval(spawnOtherCar,1300);
 
 /* Loop */
 function loop(){
-  if(!broken){
-    if(keys.a) angle-=3;
-    if(keys.d) angle+=3;
-    if(keys.w) speed+=0.2;
-    if(keys.s) speed-=0.3;
-  }
+ if(!broken){
+   if(keys.w){
+     speed+=0.3;
+     y-=2;
+   }
+   if(keys.s){
+     speed-=0.4;
+     y+=2;
+   }
+   if(keys.a) x-=3;
+   if(keys.d) x+=3;
+ }
 
-  speed=Math.max(0,Math.min(speed,140));
+ speed=Math.max(0,Math.min(speed,160));
+ x=Math.max(0,Math.min(x,360));
+ y=Math.max(50,Math.min(y,window.innerHeight-140));
 
-  const rad=angle*Math.PI/180;
-  px+=Math.sin(rad)*speed*0.05;
-  py-=Math.cos(rad)*speed*0.05;
+ car.style.left=x+"px";
+ car.style.top=y+"px";
 
-  player.style.left=px+"px";
-  player.style.top=py+"px";
-  player.style.transform=`rotate(${angle}deg)`;
+ speedText.textContent="Velocidad: "+Math.floor(speed)+" km/h";
 
-  speedText.textContent="Velocidad: "+Math.floor(speed)+" km/h";
+ battery-=0.05;
+ if(x>210 && x<320) battery+=0.25;
 
-  battery-=0.04;
-  if(px>580 && px<720) battery+=0.2;
-  if(py>880 && py<1020) battery+=0.2;
+ battery=Math.max(0,Math.min(100,battery));
+ batteryFill.style.width=battery+"%";
 
-  battery=Math.max(0,Math.min(100,battery));
-  batteryFill.style.width=battery+"%";
+ if(battery<=0){
+   broken=true;
+   speed=0;
+   speedText.textContent="AVERÍA";
+ }
 
-  if(battery<=0){
-    broken=true;
-    speed=0;
-    speedText.textContent="AVERÍA";
-  }
-
-  requestAnimationFrame(loop);
+ requestAnimationFrame(loop);
 }
 loop();
 </script>
