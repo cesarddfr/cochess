@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Juego de Carriles</title>
+<style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background: #222;
+  font-family: Arial, sans-serif;
+}
+
+#ui {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+  color: white;
+}
+
+#speed {
+  margin-top: 10px;
+}
+
+#road {
+  position: absolute;
+  width: 400px;
+  height: 100vh;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #555;
+  overflow: hidden;
+}
+
+.lane {
+  position: absolute;
+  width: 25%;
+  height: 100%;
+  border-left: 2px dashed #aaa;
+}
+
+.lane.green {
+  background: #0b3d1a;
+  box-shadow: inset 0 0 20px #00ff66;
+}
+
+.ray {
+  position: absolute;
+  width: 100%;
+  height: 40px;
+  background: rgba(0,255,100,0.4);
+  animation: rayMove 0.5s linear infinite;
+}
+
+@keyframes rayMove {
+  from { top: -40px; }
+  to { top: 100%; }
+}
+
+#car {
+  position: absolute;
+  width: 40px;
+  height: 70px;
+  background: red;
+  bottom: 80px;
+  left: 180px;
+  border-radius: 8px;
+}
+
+#battery {
+  position: absolute;
+  top: -15px;
+  width: 40px;
+  height: 6px;
+  background: red;
+}
+
+#batteryFill {
+  height: 100%;
+  width: 100%;
+  background: lime;
+}
+
+.other-car {
+  position: absolute;
+  width: 40px;
+  height: 70px;
+  background: #333;
+  top: -100px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+  <button onclick="changeCar()">Cambiar coche</button>
+  <div id="speed">Velocidad: 0 km/h</div>
+</div>
+
+<div id="road">
+  <div class="lane" style="left:0%"></div>
+  <div class="lane" style="left:25%"></div>
+  <div class="lane green" style="left:50%">
+    <div class="ray"></div>
+  </div>
+  <div class="lane" style="left:75%"></div>
+
+  <div id="car">
+    <div id="battery">
+      <div id="batteryFill"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const car = document.getElementById("car");
+const speedText = document.getElementById("speed");
+const batteryFill = document.getElementById("batteryFill");
+
+let x = 180;
+let speed = 0;
+let battery = 100;
+let broken = false;
+
+const cars = {
+  Porsche: "red",
+  Lambo: "yellow",
+  Mercedes: "silver",
+  Tesla: "cyan"
+};
+let carNames = Object.keys(cars);
+let currentCar = 0;
+
+function changeCar() {
+  currentCar = (currentCar + 1) % carNames.length;
+  car.style.background = cars[carNames[currentCar]];
+}
+
+const keys = {};
+document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+function gameLoop() {
+  if (!broken) {
+    if (keys.w) speed += 0.2;
+    if (keys.s) speed -= 0.3;
+    if (keys.a) x -= 3;
+    if (keys.d) x += 3;
+  }
+
+  speed = Math.max(0, Math.min(speed, 120));
+  x = Math.max(0, Math.min(x, 360));
+  car.style.left = x + "px";
+
+  speedText.textContent = "Velocidad: " + Math.floor(speed) + " km/h";
+
+  // Batería
+  battery -= 0.05;
+  if (x > 200 && x < 300) battery += 0.2; // carril verde
+
+  battery = Math.max(0, Math.min(100, battery));
+  batteryFill.style.width = battery + "%";
+
+  if (battery <= 0) {
+    broken = true;
+    speed = 0;
+    speedText.textContent = "AVERIADO";
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
