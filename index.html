@@ -65,13 +65,7 @@ body{
   bottom:80px;
 }
 
-/* SVG coche */
-svg{
-  width:100%;
-  height:100%;
-}
-
-/* Batería */
+/* Batería (solo jugador) */
 #batteryBox{
   position:absolute;
   top:-38px;
@@ -96,10 +90,8 @@ svg{
 /* Coches de fondo */
 .other-car{
   position:absolute;
-  width:50px;
-  height:100px;
-  opacity:.9;
 }
+svg{width:100%;height:100%;}
 </style>
 </head>
 
@@ -118,6 +110,7 @@ svg{
   </div>
   <div class="lane" style="left:75%"></div>
 
+  <!-- COCHE JUGADOR -->
   <div id="car">
     <div id="batteryBox">
       BATERÍA
@@ -126,7 +119,6 @@ svg{
       </div>
     </div>
 
-    <!-- COCHE SVG REALISTA -->
     <svg viewBox="0 0 60 110">
       <path id="carBody" d="M10 5 Q30 -5 50 5 L55 25 L55 90 Q30 105 5 90 L5 25 Z" fill="#d40000"/>
       <rect x="18" y="18" width="24" height="20" rx="5" fill="#8fd3ff"/>
@@ -151,54 +143,57 @@ let speed=0;
 let battery=100;
 let broken=false;
 
-const cars=[
- {name:"Porsche",color:"#d40000"},
- {name:"Lambo",color:"#ffd000"},
- {name:"Mercedes",color:"#cfcfcf"},
- {name:"Tesla",color:"#00c8ff"}
-];
-let currentCar=0;
+const colors=["#d40000","#ffd000","#00c8ff","#cfcfcf","#00ff88","#ff00aa"];
 
 function changeCar(){
- currentCar=(currentCar+1)%cars.length;
- carBody.setAttribute("fill",cars[currentCar].color);
+ carBody.setAttribute("fill",colors[Math.floor(Math.random()*colors.length)]);
 }
 
 const keys={};
 document.addEventListener("keydown",e=>keys[e.key.toLowerCase()]=true);
 document.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-/* Coches fondo */
+/* Coches fondo SIN batería y DIFERENTES */
 function spawnOtherCar(){
  const c=document.createElement("div");
  c.className="other-car";
- c.innerHTML=car.innerHTML;
+
+ const color=colors[Math.floor(Math.random()*colors.length)];
+ const scale=0.8+Math.random()*0.4;
+ const speedCar=2+Math.random()*3;
+
+ c.innerHTML=`
+ <svg viewBox="0 0 60 110">
+  <path d="M10 5 Q30 -5 50 5 L55 25 L55 90 Q30 105 5 90 L5 25 Z" fill="${color}"/>
+  <rect x="18" y="18" width="24" height="20" rx="5" fill="#9fdcff"/>
+  <rect x="8" y="35" width="6" height="20" rx="3" fill="#000"/>
+  <rect x="46" y="35" width="6" height="20" rx="3" fill="#000"/>
+ </svg>`;
+
+ c.style.width=60*scale+"px";
+ c.style.height=110*scale+"px";
+ c.style.opacity=0.6+Math.random()*0.4;
  c.style.left=(Math.floor(Math.random()*4)*105+30)+"px";
- c.style.top="-120px";
+ c.style.top="-140px";
+
  road.appendChild(c);
- let y=-120;
+ let y=-140;
 
  function move(){
-   y+=3;
+   y+=speedCar;
    c.style.top=y+"px";
    if(y<window.innerHeight) requestAnimationFrame(move);
    else c.remove();
  }
  move();
 }
-setInterval(spawnOtherCar,1300);
+setInterval(spawnOtherCar,1200);
 
-/* Loop */
+/* Loop principal */
 function loop(){
  if(!broken){
-   if(keys.w){
-     speed+=0.3;
-     y-=2;
-   }
-   if(keys.s){
-     speed-=0.4;
-     y+=2;
-   }
+   if(keys.w){speed+=0.3;y-=2;}
+   if(keys.s){speed-=0.4;y+=2;}
    if(keys.a) x-=3;
    if(keys.d) x+=3;
  }
